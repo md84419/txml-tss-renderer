@@ -1,0 +1,293 @@
+// CSS-like stylesheet parser
+
+import { TSSRule, TSSVariable, TSSStylesheet, SUPPORTED_PROPERTIES } from './types.js';
+
+export class TSSParseError extends Error {
+  constructor(message: string, public line?: number, public column?: number) {
+    super(message);
+    this.name = 'TSSParseError';
+  }
+}
+
+export class TSSParser {
+  private pos = 0;
+  private line = 1;
+  private column = 1;
+
+  constructor(private tss: string) {}
+
+  parse(): TSSStylesheet {
+    const variables = new Map<string, string>();
+    const rules: TSSRule[] = [];
+
+    this.skipWhitespace();
+
+    while (this.pos < this.tss.length) {
+      if (this.tss.startsWith(':root', this.pos)) {
+        // CSS variables in :root
+        this.parseRootVariables(variables);
+      } else if (this.tss[this.pos] === '@') {
+        // At-rule (like @media, @import, etc.)
+        this.parseAtRule();
+      } else {
+        // CSS rule
+        const rule = this.parseRule();
+        if (rule) {
+          rules.push(rule);
+        }
+      }
+      this.skipWhitespace();
+    }
+
+    return { variables, rules };
+  }
+
+  private parseRootVariables(variables: Map<string, string>): void {
+    // Skip :root
+    this.pos += 5;
+    this.column += 5;
+    
+    this.skipWhitespace();
+    
+    if (!this.consume('{')) {
+      throw new TSSParseError('Expected { after :root', this.line, this.column);
+    }
+    
+    while (this.pos < this.tss.length && this.tss[this.pos] !== '}') {
+      this.skipWhitespace();
+      
+      if (this.tss[this.pos] === '}') break;
+      
+      if (this.tss.startsWith('--', this.pos)) {
+        const variable = this.parseVariable();
+        variables.set(variable.name, variable.value);
+      } else {
+        // Skip other properties in :root
+        this.parseIdentifier();
+        this.consume(':');
+        this.parseValue();
+        this.consume(';');
+      }
+      
+      this.skipWhitespace();
+    }
+    
+    if (!this.consume('}')) {
+      throw new TSSParseError('Expected } after :root block', this.line, this.column);
+    }
+  }
+
+  private parseVariable(): TSSVariable {
+    if (!this.consume('--')) {
+      throw new TSSParseError('Expected -- for CSS variable', this.line, this.column);
+    }
+
+    const name = this.parseIdentifier();
+    
+    if (!this.consume(':')) {
+      throw new TSSParseError('Expected : after variable name', this.line, this.column);
+    }
+
+    this.skipWhitespace();
+    const value = this.parseValue();
+    
+    if (!this.consume(';')) {
+      throw new TSSParseError('Expected ; after variable value', this.line, this.column);
+    }
+
+    return { name, value };
+  }
+
+  private parseRule(): TSSRule | null {
+    const selector = this.parseSelector();
+    if (!selector) return null;
+
+    if (!this.consume('{')) {
+      throw new TSSParseError('Expected { after selector', this.line, this.column);
+    }
+
+    const properties = this.parseProperties();
+
+    if (!this.consume('}')) {
+      throw new TSSParseError('Expected } after properties', this.line, this.column);
+    }
+
+    const specificity = this.calculateSpecificity(selector);
+
+    return { selector, properties, specificity };
+  }
+
+  private parseSelector(): string {
+    const start = this.pos;
+    
+    // Find the opening brace
+    while (this.pos < this.tss.length && this.tss[this.pos] !== '{') {
+      this.pos++;
+      this.column++;
+    }
+    
+    return this.tss.slice(start, this.pos).trim();
+  }
+
+  private parseProperties(): Record<string, string> {
+    const properties: Record<string, string> = {};
+    
+    while (this.pos < this.tss.length && this.tss[this.pos] !== '}') {
+      this.skipWhitespace();
+      
+      if (this.tss[this.pos] === '}') break;
+      
+      const name = this.parseIdentifier();
+      
+      if (!this.consume(':')) {
+        throw new TSSParseError('Expected : after property name', this.line, this.column);
+      }
+      
+      this.skipWhitespace();
+      const value = this.parseValue();
+      
+      if (!SUPPORTED_PROPERTIES.includes(name as any)) {
+        console.warn(`Unknown property: ${name}`, this.line, this.column);
+      }
+      
+      properties[name] = value;
+      
+      if (!this.consume(';')) {
+        throw new TSSParseError('Expected ; after property value', this.line, this.column);
+      }
+      
+      this.skipWhitespace();
+    }
+    
+    return properties;
+  }
+
+  private parseValue(): string {
+    const start = this.pos;
+    
+    // Handle quoted strings
+    if (this.tss[this.pos] === '"' || this.tss[this.pos] === "'") {
+      const quote = this.tss[this.pos];
+      this.pos++;
+      this.column++;
+      
+      while (this.pos < this.tss.length && this.tss[this.pos] !== quote) {
+        if (this.tss[this.pos] === '\n') {
+          this.line++;
+          this.column = 1;
+        } else {
+          this.column++;
+        }
+        this.pos++;
+      }
+      
+      if (this.pos < this.tss.length) {
+        this.pos++;
+        this.column++;
+      }
+      
+      return this.tss.slice(start + 1, this.pos - 1);
+    }
+    
+    // Handle unquoted values
+    while (this.pos < this.tss.length && 
+           this.tss[this.pos] !== ';' && 
+           this.tss[this.pos] !== '}' && 
+           !/\s/.test(this.tss[this.pos])) {
+      this.pos++;
+      this.column++;
+    }
+    
+    return this.tss.slice(start, this.pos).trim();
+  }
+
+  private parseIdentifier(): string {
+    const start = this.pos;
+    
+    while (this.pos < this.tss.length && 
+           /[a-zA-Z0-9_-]/.test(this.tss[this.pos])) {
+      this.pos++;
+      this.column++;
+    }
+    
+    return this.tss.slice(start, this.pos);
+  }
+
+  private parseAtRule(): void {
+    // Skip @rules for now (like @media, @import)
+    while (this.pos < this.tss.length && this.tss[this.pos] !== ';' && this.tss[this.pos] !== '{') {
+      this.pos++;
+      this.column++;
+    }
+    
+    if (this.tss[this.pos] === '{') {
+      // Skip the entire block
+      let depth = 1;
+      this.pos++;
+      this.column++;
+      
+      while (this.pos < this.tss.length && depth > 0) {
+        if (this.tss[this.pos] === '{') depth++;
+        else if (this.tss[this.pos] === '}') depth--;
+        
+        if (this.tss[this.pos] === '\n') {
+          this.line++;
+          this.column = 1;
+        } else {
+          this.column++;
+        }
+        this.pos++;
+      }
+    } else {
+      // Skip to semicolon
+      while (this.pos < this.tss.length && this.tss[this.pos] !== ';') {
+        this.pos++;
+        this.column++;
+      }
+      if (this.pos < this.tss.length) {
+        this.pos++;
+        this.column++;
+      }
+    }
+  }
+
+  private calculateSpecificity(selector: string): number {
+    // Simple specificity calculation: tag=1, class=10, id=100
+    let specificity = 0;
+    
+    const parts = selector.split(/\s+/);
+    for (const part of parts) {
+      if (part.startsWith('#')) specificity += 100;
+      else if (part.startsWith('.')) specificity += 10;
+      else if (part.match(/^[a-zA-Z]/)) specificity += 1;
+    }
+    
+    return specificity;
+  }
+
+  private skipWhitespace(): void {
+    while (this.pos < this.tss.length && /\s/.test(this.tss[this.pos])) {
+      if (this.tss[this.pos] === '\n') {
+        this.line++;
+        this.column = 1;
+      } else {
+        this.column++;
+      }
+      this.pos++;
+    }
+  }
+
+  private consume(expected: string): boolean {
+    if (this.tss.startsWith(expected, this.pos)) {
+      this.pos += expected.length;
+      this.column += expected.length;
+      return true;
+    }
+    return false;
+  }
+}
+
+export function parseTSS(tss: string): TSSStylesheet {
+  const parser = new TSSParser(tss);
+  return parser.parse();
+}

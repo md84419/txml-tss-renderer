@@ -1,0 +1,39 @@
+{
+  "name": "txml-tss-renderer",
+  "version": "1.0.0",
+  "description": "XML + CSS styling for Dear ImGui via jsimgui",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "test": "vitest",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "imgui",
+    "xml",
+    "css",
+    "ui",
+    "webgpu",
+    "webgl"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@mori2003/jsimgui": "^0.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ]
+}
