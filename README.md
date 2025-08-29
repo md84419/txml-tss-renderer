@@ -41,7 +41,42 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000/demo.html to see it in action.
+Open http://localhost:3000/demo.html to see the original demo.
+
+**For the working ImGui demos (created per maintainer request):**
+- **TXML/TSS Demo**: http://localhost:3000/working-imgui-demo.html
+- **JSX Demo**: http://localhost:3000/jsx-working-demo.html
+
+## Demo Pages
+
+The project includes three demo pages:
+
+- **`demo/demo.html`** - Original TXML/TSS editor with mock rendering
+- **`demo/working-imgui-demo.html`** - **🎯 MAIN DEMO** TXML/TSS rendered directly to ImGui canvas
+- **`demo/jsx-working-demo.html`** - **🎯 BONUS DEMO** JSX syntax converted to TXML and rendered to ImGui
+
+> **Note**: The working demos (`working-imgui-demo.html` and `jsx-working-demo.html`) were created in response to maintainer feedback to demonstrate TXML/TSS and JSX rendering directly to ImGui canvas with console output of generated ImGui JavaScript code.
+
+### TXML/TSS ImGui Demo (`working-imgui-demo.html`)
+
+**This demo renders TXML/TSS directly to ImGui:**
+
+- **Left Panel**: TXML and TSS editors
+- **Right Panel**: ImGui canvas showing the rendered UI
+- **Console Output**: Shows the generated ImGui JavaScript code
+- **Interactive**: Click buttons, use sliders, type in inputs - all working in real ImGui
+
+### JSX ImGui Demo (`jsx-working-demo.html`)
+
+**This demo renders JSX syntax to ImGui:**
+
+- **Left Panel**: JSX code editor with React-like syntax
+- **Right Panel**: ImGui canvas showing the rendered JSX content
+- **State Management**: Simple state management
+- **Interactive**: Buttons with state updates, real-time rendering
+- **Console Output**: Shows JSX to TXML conversion and ImGui code generation
+
+
 
 ## Basic usage
 

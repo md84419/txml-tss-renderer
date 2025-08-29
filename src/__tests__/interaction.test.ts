@@ -178,3 +178,4 @@ describe('Interaction Tests', () => {
     expect(resetHandler).toHaveBeenCalled();
   });
 });
+

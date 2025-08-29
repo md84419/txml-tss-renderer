@@ -72,3 +72,4 @@ export const SUPPORTED_PROPERTIES = [
 ] as const;
 
 export type SupportedProperty = typeof SUPPORTED_PROPERTIES[number];
+

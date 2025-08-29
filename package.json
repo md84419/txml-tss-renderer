@@ -1,25 +1,20 @@
 {
   "name": "txml-tss-renderer",
   "version": "1.0.0",
-  "description": "XML + CSS styling for Dear ImGui via jsimgui",
+  "description": "A minimal Trema-style XML (TXML) + stylesheet (TSS) layer for TypeScript that renders to Dear ImGui via jsimgui (WebGPU)",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build --config vite.lib.config.ts",
     "test": "vitest",
     "preview": "vite preview"
   },
   "keywords": [
-    "imgui",
-    "xml",
-    "css",
-    "ui",
-    "webgpu",
-    "webgl"
+    "imgui", "txml", "tss", "typescript", "webgpu", "ui", "xml", "css", "renderer"
   ],
-  "author": "",
+  "author": "TXML/TSS Renderer",
   "license": "MIT",
   "dependencies": {
     "@mori2003/jsimgui": "^0.8.0"
@@ -32,8 +27,6 @@
     "vitest": "^1.0.0"
   },
   "files": [
-    "src",
-    "README.md",
-    "LICENSE"
+    "src", "README.md", "LICENSE"
   ]
 }
