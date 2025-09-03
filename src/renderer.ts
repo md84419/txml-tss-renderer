@@ -8,15 +8,19 @@ import { parseTSS } from './tss-parser.js';
 import { StateManager } from './state-manager.js';
 import { StyleEngine } from './style-engine.js';
 import { WidgetRenderers } from './widget-renderers.js';
+import { Logger } from './logger.js';
 
 export class TXMLTSSRenderer {
   private stateManager: StateManager;
   private widgetRenderers: WidgetRenderers;
   private eventHandlers = new Map<string, EventHandler>();
+  private logger: Logger;
 
-  constructor() {
+
+  constructor(logger: Logger = null) {
     this.stateManager = new StateManager();
     this.widgetRenderers = new WidgetRenderers();
+    this.logger = logger || null;
   }
 
   /**
@@ -55,6 +59,7 @@ export class TXMLTSSRenderer {
     } catch (error) {
       console.error('TXML/TSS render error:', error);
     }
+    return this.logger?.getLogs();
   }
 
   /**
@@ -84,6 +89,6 @@ export class TXMLTSSRenderer {
   }
 }
 
-export function createRenderer(): TXMLTSSRenderer {
-  return new TXMLTSSRenderer();
+export function createRenderer(logger: Console | any): TXMLTSSRenderer {
+  return new TXMLTSSRenderer(logger || null);
 }

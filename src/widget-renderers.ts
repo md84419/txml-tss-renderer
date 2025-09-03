@@ -4,12 +4,15 @@
 
 import { ImGui, ImVec2, ImVec4 } from '@mori2003/jsimgui';
 import { TXMLElement, RenderContext, WidgetRenderer, ComputedStyle } from './types.js';
+import { Logger } from './logger.js';
 
 export class WidgetRenderers {
   private renderers = new Map<string, WidgetRenderer>();
+  private logger: Logger;
 
-  constructor() {
+  constructor(logger: Logger = null) {
     this.setupRenderers();
+    this.logger = logger || null;
   }
 
   private setupRenderers(): void {
@@ -57,13 +60,16 @@ export class WidgetRenderers {
     // Apply window styling if needed
     if (style.width && style.width.type === 'number') {
       ImGui.SetNextWindowSize(new ImVec2(style.width.value, style.height?.value || 200), ImGui.Cond.Once);
+      this.logger?.info(`ImGui.SetNextWindowSize(new ImVec2(${style.width.value}, ${style.height?.value} || 200), ImGui.Cond.Once);`);
     }
     
     const opened = ImGui.Begin(title);
+    this.logger?.info(`ImGui.Begin(${title});`);
     if (opened) {
       this.renderChildren(element, context);
     }
     ImGui.End();
+    this.logger?.info('ImGui.End();');
   }
 
   private renderText(element: TXMLElement, context: RenderContext): void {
@@ -73,8 +79,10 @@ export class WidgetRenderers {
     if (style.color && style.color.type === 'color') {
       const color = this.intToImVec4(style.color.value);
       ImGui.TextColored(color, text);
+      this.logger?.info(`ImGui.TextColored(${color}, ${text});`);
     } else {
       ImGui.Text(text);
+      this.logger?.info(`ImGui.Text(${text});`);
     }
   }
 
@@ -85,9 +93,11 @@ export class WidgetRenderers {
     // Apply button styling
     if (style.width && style.width.type === 'number') {
       ImGui.SetNextItemWidth(style.width.value);
+      this.logger?.info(`ImGui.SetNextItemWidth(${style.width.value});`);
     }
     
     const clicked = ImGui.Button(text);
+    this.logger?.info(`ImGui.Button(${text});`);
     
     if (clicked && element.attributes.onClick) {
       this.handleEvent(element.attributes.onClick, context);
@@ -105,11 +115,13 @@ export class WidgetRenderers {
     // Apply input styling
     if (style.width && style.width.type === 'number') {
       ImGui.SetNextItemWidth(style.width.value);
+      this.logger?.info(`ImGui.SetNextItemWidth(${style.width.value});`);
     }
     
     let value = state.value || '';
     const valueArray = [value];
     const changed = ImGui.InputTextWithHint(label, hint, valueArray, 256);
+    this.logger?.info(`ImGui.InputTextWithHint(${label}, ${hint}, ${valueArray}, 256);`);
     
     if (changed) {
       state.value = valueArray[0];
@@ -130,10 +142,12 @@ export class WidgetRenderers {
     // Apply slider styling
     if (style.width && style.width.type === 'number') {
       ImGui.SetNextItemWidth(style.width.value);
+      this.logger?.info(`ImGui.SetNextItemWidth(${style.width.value});`);
     }
     
     let value = state.value || 0.5;
     const changed = ImGui.SliderFloat(label, value, min, max);
+    this.logger?.info(`ImGui.SliderFloat(${label}, ${value}, ${min}, ${max});`);
     
     if (changed) {
       state.value = value;
@@ -149,6 +163,7 @@ export class WidgetRenderers {
     const label = element.attributes.label || '';
     let checked = state.value || false;
     const changed = ImGui.Checkbox(label, checked);
+    this.logger?.info(`ImGui.Checkbox(${label}, ${checked});`);
     
     if (changed) {
       state.value = checked;
@@ -161,14 +176,17 @@ export class WidgetRenderers {
     const offset = parseFloat(element.attributes.offset || '0');
     const spacing = parseFloat(element.attributes.spacing || '-1');
     ImGui.SameLine(offset, spacing);
+    this.logger?.info(`ImGui.SameLine(${offset}, ${spacing});`);
   }
 
   private renderSpacing(_element: TXMLElement, _context: RenderContext): void {
     ImGui.Spacing();
+    this.logger?.info(`ImGui.Spacing();`);
   }
 
   private renderSeparator(_element: TXMLElement, _context: RenderContext): void {
     ImGui.Separator();
+    this.logger?.info(`ImGui.Separator();`);
   }
 
   private renderChildren(element: TXMLElement, context: RenderContext): void {
@@ -180,6 +198,7 @@ export class WidgetRenderers {
         // Text content - render as text
         if (child.trim()) {
           ImGui.Text(child.trim());
+          this.logger?.info(`ImGui.Text(${child.trim()});`);
         }
       } else {
         // Element - render recursively
